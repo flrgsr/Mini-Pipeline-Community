@@ -34,7 +34,7 @@ def run_mini_pipeline():
 
     data = datasets.fetch_adhd(number_subjects)
 
-    figures_folder = 'figures/'
+    figures_folder = '../figures/'
     count=0
     for func_file, confound_file in zip(data.func, data.confounds):
         

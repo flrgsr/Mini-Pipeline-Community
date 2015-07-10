@@ -9,11 +9,14 @@ import louvain
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 
+import logging
+
 def run_mini_pipeline():
 	datadir = 'data'
 	for root, dirs, filenames in os.walk(datadir):
 		for file in filenames:
 			print 'computing subject ' + str(filenames.index(file))
+			logging.info('computing subject ' + str(filenames.index(file)))
 			file_handle = os.path.join(root, file)
 			df = pd.read_csv(file_handle, sep='\t')
 			np_ts_matrix=df.as_matrix()
@@ -26,10 +29,19 @@ def run_mini_pipeline():
 				save_name = 'subject ' + str(filenames.index(file))
 				analyse_community(graph, save_name)
 		print 'done'
+		logging.info('done')
 
 
 def analyse_community(graph, save_name):
-	partition = louvain.best_partition(graph)    
+	partition = louvain.best_partition(graph)
+	print 'Number of communities: ' + str(len(set(partition.values())))
+	logging.info('Number of communities: ' + str(len(set(partition.values()))))
+	com_node_map = {}
+	for community in set(partition.values()):
+		com_node_map[community] = len([nodes for nodes in partition.keys() if partition[nodes] == community])
+	for k, v in com_node_map.items():
+		print 'Community ' + str(k+1) + ' has ' + str(v) + ' nodes' 
+		logging.info('Community ' + str(k+1) + ' has ' + str(v) + ' nodes')
 	nx.set_node_attributes(graph, 'community', partition)
 	drawNetwork(graph, save_name)
 
@@ -75,4 +87,5 @@ def drawNetwork(G, save_name):
 	plt.clf()
 
 if __name__ == '__main__':
+	logging.basicConfig(filename='logs/community.log', level=logging.INFO)
 	run_mini_pipeline()

@@ -43,9 +43,23 @@ def analyse_community(graph, save_name):
 		print 'Community ' + str(k+1) + ' has ' + str(v) + ' nodes' 
 		logging.info('Community ' + str(k+1) + ' has ' + str(v) + ' nodes')
 	nx.set_node_attributes(graph, 'community', partition)
+	community_size_distribution(com_node_map, save_name)
 	drawNetwork(graph, save_name)
 
 
+
+
+def community_size_distribution(comm_map, save_name):
+	sizes=comm_map.values()
+	from collections import Counter
+	import pandas as pd
+	import seaborn as sns
+	distribution=pd.DataFrame(Counter(sizes).items(), columns=['community size','number of communities'])
+	plt.clf()
+	distribution.plot(kind='scatter', x='community size', y='number of communities');
+	plt.savefig('figures/' + save_name + '_community_size_distribution')
+	plt.clf()
+	plt.close()
 
 def drawNetwork(G, save_name):
 	# position map
@@ -82,10 +96,11 @@ def drawNetwork(G, save_name):
 		)
 
 	plt.axis('off')
-	plt.savefig('figures/' + save_name)
+	plt.savefig('figures/' + save_name + '_community_network')
 	# plt.show()
 	plt.clf()
+	plt.close()
 
 if __name__ == '__main__':
-	logging.basicConfig(filename='logs/community.log', level=logging.INFO)
+	logging.basicConfig(filename='logs/community.log', level=logging.INFO, format="%(asctime)-15s %(levelname)-8s %(message)s", filemode='w')
 	run_mini_pipeline()

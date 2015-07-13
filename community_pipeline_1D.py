@@ -3,7 +3,7 @@ import pandas as pd
 import networkx as nx
 import os
 import sys
-sys.path.append("..")
+sys.path.append("louvain")
 import louvain
 
 import matplotlib.pyplot as plt
@@ -25,6 +25,7 @@ def run_mini_pipeline():
 			correlation_matrix[correlation_matrix<threshold] = 0
 			correlation_matrix[correlation_matrix != 0] = 1
 			graph = nx.from_numpy_matrix(correlation_matrix)
+			# nx.write_edgelist(graph, 'logs/test_edgelist' + str(filenames.index(file)))
 			if filenames.index(file) != float('inf'):
 				save_name = 'subject ' + str(filenames.index(file))
 				analyse_community(graph, save_name)
@@ -34,6 +35,7 @@ def run_mini_pipeline():
 
 def analyse_community(graph, save_name):
 	partition = louvain.best_partition(graph)
+	dendro = louvain.generate_dendrogram(graph)
 	print 'Number of communities: ' + str(len(set(partition.values())))
 	logging.info('Number of communities: ' + str(len(set(partition.values()))))
 	com_node_map = {}
@@ -43,23 +45,37 @@ def analyse_community(graph, save_name):
 		print 'Community ' + str(k+1) + ' has ' + str(v) + ' nodes' 
 		logging.info('Community ' + str(k+1) + ' has ' + str(v) + ' nodes')
 	nx.set_node_attributes(graph, 'community', partition)
-	community_size_distribution(com_node_map, save_name)
+	no_pe_com_map_list = nodes_per_community(dendro)
+	community_size_distribution(no_pe_com_map_list, save_name)
 	drawNetwork(graph, save_name)
 
 
 
-
 def community_size_distribution(comm_map, save_name):
-	sizes=comm_map.values()
 	from collections import Counter
 	import pandas as pd
 	import seaborn as sns
-	distribution=pd.DataFrame(Counter(sizes).items(), columns=['community size','number of communities'])
-	plt.clf()
-	distribution.plot(kind='scatter', x='community size', y='number of communities');
-	plt.savefig('figures/' + save_name + '_community_size_distribution')
+	for level in range(len(comm_map)):
+		sizes=comm_map[level].values()
+		distribution=pd.DataFrame(Counter(sizes).items(), columns=['community size','number of communities'])
+		plt.clf()
+		distribution.plot(kind='scatter', x='community size', y='number of communities', title='Level: ' + str(level))
+		plt.savefig('figures/' + save_name + '_community_size_distribution_level_' + str(level))
 	plt.clf()
 	plt.close()
+
+
+def nodes_per_community(dendrogram):
+    result = list()
+    com_node_map = dict()
+    for level in range(len(dendrogram)):
+        current_partition = dendrogram[level]
+        for community in set(current_partition.values()):
+            com_node_map[community] = len([nodes for nodes in current_partition.keys() if current_partition[nodes] == community])
+        result.append(com_node_map)
+        com_node_map = {}
+    return result
+
 
 def drawNetwork(G, save_name):
 	# position map

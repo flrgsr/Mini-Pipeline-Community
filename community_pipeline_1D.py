@@ -11,6 +11,8 @@ import matplotlib.colors as colors
 
 import logging
 
+global_frame_list = []
+
 def run_mini_pipeline():
 	datadir = 'data'
 	for root, dirs, filenames in os.walk(datadir):
@@ -21,10 +23,13 @@ def run_mini_pipeline():
 			df = pd.read_csv(file_handle, sep='\t')
 			np_ts_matrix=df.as_matrix()
 			correlation_matrix = np.corrcoef(np_ts_matrix.T)
-			threshold = 0.6
+			threshold = 0.7
 			correlation_matrix[correlation_matrix<threshold] = 0
 			correlation_matrix[correlation_matrix != 0] = 1
 			graph = nx.from_numpy_matrix(correlation_matrix)
+			print graph.size()
+			print graph.number_of_nodes()
+			print graph.number_of_edges()
 			# nx.write_edgelist(graph, 'logs/test_edgelist' + str(filenames.index(file)))
 			if filenames.index(file) != float('inf'):
 				save_name = 'subject ' + str(filenames.index(file))
@@ -56,13 +61,25 @@ def community_size_distribution(comm_map, save_name):
 	import pandas as pd
 	import seaborn as sns
 	for level in range(len(comm_map)):
-		sizes=comm_map[level].values()
-		distribution=pd.DataFrame(Counter(sizes).items(), columns=['community size','number of communities'])
+		# sizes=comm_map[level].values()
+		# distribution=pd.DataFrame(Counter(sizes).items(), columns=['community size','number of communities'])
+		# plt.clf()
+		# distribution.plot(kind='scatter', x='community size', y='number of communities', title='Level: ' + str(level))
+		# plt.savefig('figures/' + save_name + '_community_size_distribution_level_' + str(level))
+		df = pd.DataFrame([(level,val) for level, dct in enumerate(comm_map) for val in dct.values()], columns=['level', 'size'])
+		size_count = df.groupby(['level'])['size'].apply(lambda x: x.value_counts())
+		size_count = size_count.reset_index()
+		size_count.columns = ['level', 'community size', 'number of communities']
+		global_frame_list.append(size_count)
+		cmap = plt.get_cmap('jet')
 		plt.clf()
-		distribution.plot(kind='scatter', x='community size', y='number of communities', title='Level: ' + str(level))
+		size_count.plot(kind='scatter', x='community size', y='number of communities', s=100, c='level', cmap=cmap)
 		plt.savefig('figures/' + save_name + '_community_size_distribution_level_' + str(level))
 	plt.clf()
 	plt.close()
+	# subject_frame = pd.concat(frames, ignore_index=True)
+	
+
 
 
 def nodes_per_community(dendrogram):
@@ -120,3 +137,8 @@ def drawNetwork(G, save_name):
 if __name__ == '__main__':
 	logging.basicConfig(filename='logs/community.log', level=logging.INFO, format="%(asctime)-15s %(levelname)-8s %(message)s", filemode='w')
 	run_mini_pipeline()
+	global_frame = pd.concat(global_frame_list, ignore_index=True)
+	mean_result=global_frame.groupby(['level', 'community size']).mean().reset_index()
+	mean_result.columns = ['level', 'community size', 'average number of communities']
+	mean_result.to_csv('logs/mean_result.csv')
+	print mean_result

@@ -141,4 +141,6 @@ if __name__ == '__main__':
 	mean_result=global_frame.groupby(['level', 'community size']).mean().reset_index()
 	mean_result.columns = ['level', 'community size', 'average number of communities']
 	mean_result.to_csv('logs/mean_result.csv')
+	mean_result.boxplot(by='level')
+	plt.savefig('figures/boxplot')
 	print mean_result

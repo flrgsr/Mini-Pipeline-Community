@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import networkx as nx
+import itertools
 import os
 import sys
 sys.path.append("louvain")
@@ -50,9 +51,22 @@ def analyse_community(graph, save_name):
 		print 'Community ' + str(k+1) + ' has ' + str(v) + ' nodes' 
 		logging.info('Community ' + str(k+1) + ' has ' + str(v) + ' nodes')
 	nx.set_node_attributes(graph, 'community', partition)
+	link_ratio(graph, partition)
 	no_pe_com_map_list = nodes_per_community(dendro)
 	community_size_distribution(no_pe_com_map_list, save_name)
 	drawNetwork(graph, save_name)
+
+
+def link_ratio(graph, partition):
+	num_com = len(set(partition.values()))
+	for i in range(0, num_com):
+		nodes_in_community = [n for n in graph if graph.node[n]['community']==i]
+		neighbourlist=[graph.neighbors(n) for n in nodes_in_community]
+		neighbourflattend=list(itertools.chain.from_iterable(neighbourlist))
+		in_community = [k for k in neighbourflattend if k in nodes_in_community]
+		out_community = list(set(neighbourflattend) - set(in_community))
+		print 'Ratio (In-Degree/Out-Degree) for community ' + str(i) + ' is: ' + str(len(in_community)) + '/' + str(len(out_community))
+		logging.info('Ratio (In-Degree/Out-Degree) for community ' + str(i) + ' is: ' + str(len(in_community)) + '/' + str(len(out_community)))
 
 
 

@@ -6,6 +6,8 @@ import os
 import sys
 sys.path.append("louvain")
 import louvain
+sys.path.append("infomap")
+import infomap
 
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
@@ -13,6 +15,14 @@ import matplotlib.colors as colors
 import logging
 
 global_frame_list = []
+
+dispatch = {
+    'infomap_partition': infomap.infomap(graph)
+    'louvain_partition': louvain.best_partition(graph)
+    'infomap_dendro': infomap.iteration_loop(graph)
+    'louvain_dendro': louvain.generate_dendrogram(graph)
+}
+
 
 def run_mini_pipeline():
 	datadir = 'data'
@@ -40,8 +50,10 @@ def run_mini_pipeline():
 
 
 def analyse_community(graph, save_name):
-	partition = louvain.best_partition(graph)
-	dendro = louvain.generate_dendrogram(graph)
+   	#partition = louvain.best_partition(graph)
+    partition = infomap.infomap(graph)
+    #dendro = louvain.generate_dendrogram(graph)
+    dendro, handle = infomap.iteration_loop(graph)
 	print 'Number of communities: ' + str(len(set(partition.values())))
 	logging.info('Number of communities: ' + str(len(set(partition.values()))))
 	com_node_map = {}
